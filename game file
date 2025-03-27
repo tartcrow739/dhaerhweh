@@ -1,0 +1,192 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "BaseBuilding.generated.h"
+
+UCLASS()
+class YOURGAME_API ABaseBuilding : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    ABaseBuilding();
+
+protected:
+    virtual void BeginPlay() override;
+
+public:
+    virtual void Tick(float DeltaTime) override;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    TSubclassOf<AActor> WallBlueprint;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    TSubclassOf<AActor> DoorBlueprint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int WoodCostWall = 10;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int MetalCostWall = 5;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int NailCostWall = 5;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int WoodCostDoor = 15;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int MetalCostDoor = 10;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+    int NailCostDoor = 5;
+
+    UFUNCTION(BlueprintCallable, Category = "Building")
+    void PlaceStructure(TSubclassOf<AActor> StructureBlueprint, int WoodCost, int MetalCost, int NailCost);
+
+private:
+    class APlayerCharacter* PlayerCharacter;
+};
+
+#include "BaseBuilding.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
+#include "PlayerCharacter.h"
+
+ABaseBuilding::ABaseBuilding()
+{
+    PrimaryActorTick.bCanEverTick = true;
+}
+
+void ABaseBuilding::BeginPlay()
+{
+    Super::BeginPlay();
+    PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+}
+
+void ABaseBuilding::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+}
+
+void ABaseBuilding::PlaceStructure(TSubclassOf<AActor> StructureBlueprint, int WoodCost, int MetalCost, int NailCost)
+{
+    if (PlayerCharacter && PlayerCharacter->Wood >= WoodCost && PlayerCharacter->Metal >= MetalCost && PlayerCharacter->Nails >= NailCost)
+    {
+        FVector SpawnLocation = PlayerCharacter->GetActorLocation() + PlayerCharacter->GetActorForwardVector() * 200.f;
+        FRotator SpawnRotation = PlayerCharacter->GetActorRotation();
+        GetWorld()->SpawnActor<AActor>(StructureBlueprint, SpawnLocation, SpawnRotation);
+
+        PlayerCharacter->Wood -= WoodCost;
+        PlayerCharacter->Metal -= MetalCost;
+        PlayerCharacter->Nails -= NailCost;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Not enough materials to build!"));
+    }
+}
+
+UCLASS()
+class YOURGAME_API AEventManager : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    AEventManager();
+
+protected:
+    virtual void BeginPlay() override;
+
+public:
+    virtual void Tick(float DeltaTime) override;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bTrainActive = false;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bArmorEventActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    float TrainArrivalInterval = 168.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    float ArmorEventInterval = 120.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bQuestsActive = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    float QuestInterval = 120.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    TArray<FString> HighTierWeapons = {"Sniper Rifles", "Explosives", "Advanced Armor", "Rare Attachments"};
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    TArray<FString> HighTierArmor = {"Heavy Combat Armor", "Ballistic Helmets", "Tactical Gear"};
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bAirdropActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bHackableCratesActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Events")
+    bool bKingOfTheHillActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weather")
+    FString CurrentWeather = "Clear";
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+    bool bRadioactiveZoneActive = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+    FString RadioactiveZoneTrader = "High-Tier Trader";
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombies")
+    bool bRareZombieTypesEnabled = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombies")
+    TArray<FString> RareZombieMutations = {"Exploder", "Shadow Stalker", "Acid Spitter", "Brute"};
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicles")
+    bool bFordF350Armored = true;
+    bool bHummerH1Bulletproof = true;
+    bool bHummerH1AvailableAtCarShop = true;
+
+    UFUNCTION(BlueprintCallable, Category = "Weather")
+    void ChangeWeather(FString NewWeather);
+
+    UFUNCTION(BlueprintCallable, Category = "Radio")
+    void BroadcastMorseCodeMessage(FString MorseCodeMessage);
+};
+
+#include "EventManager.h"
+#include "TimerManager.h"
+
+AEventManager::AEventManager()
+{
+    PrimaryActorTick.bCanEverTick = true;
+}
+
+void AEventManager::BeginPlay()
+{
+    Super::BeginPlay();
+    GetWorldTimerManager().SetTimerForNextTick(this, &AEventManager::Tick);
+}
+
+void AEventManager::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+}
+
+void AEventManager::ChangeWeather(FString NewWeather)
+{
+    CurrentWeather = NewWeather;
+}
+
+void AEventManager::BroadcastMorseCodeMessage(FString MorseCodeMessage)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Morse Code Signal: %s"), *MorseCodeMessage);
+}
